@@ -1,0 +1,184 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Scroll Sense – MVP prototype</title>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600&family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#eaf0ed;--panel:#fff;--ink:#17202b;--mute:#5b6975;--line:#d3dcd8;--sea:#2b7a74;--soft:#d7ece9;--warn:#c4503a;--warnS:#f7e0d9;--amb:#d99a2b;--card:#f5f8f6;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0f1519;--panel:#18222a;--ink:#e8eef0;--mute:#9aaab4;--line:#2b3943;--sea:#5cc2b8;--soft:#1d3a3a;--warn:#ef8a74;--warnS:#3b2520;--amb:#e8b04c;--card:#202d36}}
+:root[data-theme="dark"]{--bg:#0f1519;--panel:#18222a;--ink:#e8eef0;--mute:#9aaab4;--line:#2b3943;--sea:#5cc2b8;--soft:#1d3a3a;--warn:#ef8a74;--warnS:#3b2520;--amb:#e8b04c;--card:#202d36}
+*{box-sizing:border-box}html,body{margin:0}
+body{background:var(--bg);color:var(--ink);font:400 15px/1.5 "DM Sans",system-ui,sans-serif;min-height:100%}
+h1,h2,h3{font-family:Fraunces,Georgia,serif;font-weight:600;margin:0}
+header{max-width:1040px;margin:0 auto;padding:28px 20px 8px}
+header h1{font-size:clamp(30px,5vw,44px);letter-spacing:-.01em}
+header p{margin:6px 0 0;color:var(--mute);max-width:60ch}
+main{max-width:1040px;margin:0 auto;padding:16px 20px 40px;display:grid;grid-template-columns:360px 1fr;gap:28px;align-items:start}
+@media(max-width:860px){main{grid-template-columns:1fr;justify-items:center}.side{width:100%}}
+.phone{width:100%;max-width:360px;height:660px;background:var(--panel);border:8px solid var(--ink);border-radius:38px;position:relative;overflow:hidden;display:flex;flex-direction:column}
+.bar{display:flex;align-items:center;justify-content:space-between;padding:14px 16px 8px;border-bottom:1px solid var(--line)}
+.bar b{font-family:Fraunces,serif;font-size:18px}
+.tabs{display:flex;gap:4px}
+.tabs button{border:0;background:none;color:var(--mute);font:500 13px "DM Sans";padding:6px 10px;border-radius:14px;cursor:pointer}
+.tabs button[aria-selected=true]{background:var(--soft);color:var(--sea);font-weight:700}
+.view{flex:1;overflow-y:auto;padding:12px;scrollbar-width:thin}
+.card{background:var(--card);border-radius:14px;padding:14px;margin-bottom:10px}
+.card small{color:var(--mute)}.card h3{font-size:16px;margin:4px 0 6px;line-height:1.3}
+.sheet{position:absolute;inset:0;background:rgba(10,18,24,.55);display:none;align-items:flex-end;z-index:5}
+.sheet.on{display:flex}
+.sheet>div{background:var(--panel);width:100%;border-radius:26px 26px 0 0;padding:22px 20px 24px}
+.sheet h2{font-size:22px;margin-bottom:6px}.sheet p{color:var(--mute);margin:0 0 16px}
+.btn{display:block;width:100%;border:1px solid var(--line);background:none;color:var(--ink);font:700 15px "DM Sans";padding:13px;border-radius:14px;margin-top:8px;cursor:pointer}
+.btn.p{background:var(--sea);border-color:var(--sea);color:#fff}
+:root:not([data-theme="light"]) .btn.p{color:#08201e}
+.btn:focus-visible,.tabs button:focus-visible,select:focus-visible,input:focus-visible{outline:3px solid var(--amb);outline-offset:2px}
+.orb{width:120px;height:120px;border-radius:50%;background:var(--soft);border:3px solid var(--sea);margin:10px auto 14px;display:grid;place-items:center;font-weight:700;color:var(--sea);text-align:center;font-size:14px}
+.orb.go{animation:br 8s ease-in-out 3}
+@keyframes br{0%,100%{transform:scale(.7)}50%{transform:scale(1.15)}}
+@media(prefers-reduced-motion:reduce){.orb.go{animation:none}}
+.opts{display:flex;gap:6px;margin-bottom:10px}
+.opts button{flex:1;border:1px solid var(--line);background:none;color:var(--ink);padding:8px 4px;border-radius:12px;font:500 13px "DM Sans";cursor:pointer}
+.opts button[aria-pressed=true]{background:var(--soft);border-color:var(--sea);color:var(--sea);font-weight:700}
+.moods{display:flex;gap:8px}.moods .btn{font-size:26px;padding:10px}
+.side>section{background:var(--panel);border-radius:20px;padding:20px;margin-bottom:18px;border:1px solid var(--line)}
+.side h2{font-size:20px;margin-bottom:12px}
+.score{display:flex;align-items:baseline;gap:10px}.score b{font:600 56px/1 Fraunces,serif}
+.meter{height:10px;background:var(--card);border-radius:6px;overflow:hidden;position:relative}
+.meter i{display:block;height:100%;width:0;background:var(--sea);transition:width .4s}
+.meter.hot i{background:var(--warn)}
+.row{display:grid;grid-template-columns:120px 1fr 34px;gap:10px;align-items:center;margin:8px 0;color:var(--mute);font-size:14px}
+.dots{display:flex;gap:6px;margin-top:12px;align-items:center;color:var(--mute);font-size:13px}
+.dots span{width:14px;height:14px;border-radius:50%;background:var(--line)}
+.dots .n{background:var(--warn)}.dots .z{background:var(--amb)}.dots .p{background:var(--sea)}
+.ctl{display:flex;flex-wrap:wrap;gap:12px 18px;align-items:center;margin-top:14px}
+.ctl label{display:flex;gap:8px;align-items:center;font-size:14px}
+select{font:500 14px "DM Sans";padding:7px 10px;border-radius:10px;border:1px solid var(--line);background:var(--panel);color:var(--ink)}
+.chip{border:1px solid var(--sea);color:var(--sea);background:none;font:700 14px "DM Sans";padding:8px 14px;border-radius:20px;cursor:pointer}
+.chip[aria-pressed=true]{background:var(--sea);color:var(--panel)}
+.stats{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px}
+.stat{background:var(--card);border-radius:12px;padding:10px}.stat b{display:block;font:600 24px Fraunces,serif}.stat span{font-size:12px;color:var(--mute)}
+.map{display:grid;grid-template-columns:130px 1fr;gap:6px 14px;font-size:14px;margin:0}
+.map dt{font-weight:700}.map dd{margin:0;color:var(--mute)}
+.note{font-size:13px;color:var(--mute);margin-top:12px}
+svg text{fill:var(--mute);font:11px "DM Sans"}
+</style></head><body>
+<header><h1>Scroll Sense</h1>
+<p>Scroll less. Feel better. Take back your time. A working prototype of the mindful-scroll companion: it spots a doomscrolling spiral, pauses you gently and offers a calmer next step.</p></header>
+<main>
+<div class="phone" aria-label="Phone prototype">
+ <div class="bar"><b>Scroll Sense</b>
+  <div class="tabs" role="tablist"><button role="tab" id="tf" aria-selected="true">Demo feed</button><button role="tab" id="ti" aria-selected="false">Insights</button></div></div>
+ <div class="view" id="feed" tabindex="0" aria-label="Demo news feed"></div>
+ <div class="view" id="ins" hidden></div>
+ <div class="sheet" id="sheet"><div id="sheetBody"></div></div>
+</div>
+<div class="side">
+ <section><h2>Scroll Sense detector</h2>
+  <div class="score"><b id="sc">0:00</b><span>of <b id="thr">20</b> min scrolling. A pause appears at the limit.</span></div>
+  <div class="meter" id="mt" style="margin:10px 0"><i id="mti"></i></div>
+  <div class="row">Negative content<div class="meter"><i id="m2"></i></div><span id="v2">0%</span></div>
+  <div class="dots" id="dots">Last cards seen:</div>
+  <div class="ctl">
+   <button class="chip" id="auto" aria-pressed="false">Auto-scroll</button>
+   <label><input type="checkbox" id="demo" checked> Fast clock (x30)</label>
+   <label>Feed <select id="mix"><option value=".7">Heavy news</option><option value=".2">Mixed</option></select></label>
+   <label>Time limit <select id="sens"><option value="10">10 min</option><option value="20" selected>20 min</option><option value="30">30 min</option></select></label>
+  </div>
+  <p class="note">Tap Auto-scroll or swipe the feed. With the fast clock on, the 20-minute limit is reached in about 40 seconds of scrolling.</p></section>
+ <section><h2>What this MVP covers</h2>
+  <dl class="map">
+   <dt>Scroll Sense</dt><dd>Tracks scrolling time against your limit (20 min by default, like an Instagram-style timer) and how negative the content is. Nothing leaves your browser.</dd>
+   <dt>Gentle Pause</dt><dd>A short, friendly check-in when the score crosses your threshold.</dd>
+   <dt>Calm Swap</dt><dd>A guided breath, a walk or calm music instead of the next swipe.</dd>
+   <dt>Time Reclaimed</dt><dd>Insights tab: scroll minutes, nudge acceptance rate, mood trend.</dd>
+  </dl>
+  <p class="note">Simulated for the pilot: the feed is fictional headlines, and each accepted swap counts as 10 minutes reclaimed (an assumption to validate with users). A real build would read usage signals through Android or iOS screen-time APIs.</p>
+  <button class="btn" id="reset" style="width:auto;padding:8px 14px;font-size:13px">Reset demo data</button></section>
+</div>
+</main>
+<script>
+const $=id=>document.getElementById(id);
+const POOL=[
+["Officials warn of rising prices as shelves empty","n"],["Flood alerts issued for coastal towns overnight","n"],
+["Survey: most workers feel burned out and falling behind","n"],["Outage leaves thousands without power, no end in sight","n"],
+["Experts fear the worst as markets keep sliding","n"],["Another round of layoffs hits tech firms","n"],
+["Heatwave breaks records, hospitals brace for more","n"],["Is this the end of affordable housing?","n"],
+["City council approves new bus timetable","z"],["Library extends weekend hours","z"],["Cricket schedule announced for next season","z"],["New phone models expected next month","z"],
+["Volunteers restore a village lake in two weeks","p"],["Students build a low-cost water filter that works","p"],["Rescue dog reunited with family after three days","p"]];
+const SRC=["Daily Wire Net","Metro Post","The Brief","Newsline","Pulse"];
+const S={sim:0,seen:[],vel:0,dy:0,prev:0,act:0,t:performance.now(),cool:0,thr:20,demo:true,open:false,tab:"feed",auto:false,pos:0,mix:.7};
+const KEY="scrollsense.v1";
+const today=()=>new Date().toLocaleDateString("en-CA");
+function load(){try{return JSON.parse(localStorage.getItem(KEY))}catch(e){return null}}
+function save(){try{localStorage.setItem(KEY,JSON.stringify(D))}catch(e){}}
+function seed(){const d={};const sc=[88,102,95,120,76,81],rc=[0,10,10,20,20,30];
+ for(let i=6;i>=1;i--){const k=new Date(Date.now()-i*864e5).toLocaleDateString("en-CA");d[k]={scroll:sc[6-i],nudges:2,accepted:rc[6-i]/10,reclaimed:rc[6-i],moods:[],sample:true}}return d}
+let D=load()||seed();
+function day(){const k=today();return D[k]||(D[k]={scroll:0,nudges:0,accepted:0,reclaimed:0,moods:[]})}
+// feed
+const feed=$("feed");
+const io=new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting&&!e.target.dataset.s){e.target.dataset.s=1;S.seen.push(e.target.dataset.t);dots()}}),{root:feed,threshold:.6});
+function addCards(n){for(let i=0;i<n;i++){const neg=Math.random()<S.mix;const pool=POOL.filter(p=>neg?p[1]==="n":p[1]!=="n");const p=pool[Math.random()*pool.length|0];
+ const c=document.createElement("div");c.className="card";c.dataset.t=p[1];
+ c.innerHTML=`<small>${SRC[Math.random()*5|0]} · ${1+(Math.random()*11|0)}h ago</small><h3></h3><small>${(Math.random()*9+.3).toFixed(1)}k comments</small>`;
+ c.querySelector("h3").textContent=p[0];feed.appendChild(c);io.observe(c)}}
+addCards(8);
+feed.addEventListener("scroll",()=>{S.dy+=Math.abs(feed.scrollTop-S.prev);S.prev=feed.scrollTop;
+ if(feed.scrollTop+feed.clientHeight>feed.scrollHeight-500)addCards(6)});
+function dots(){const l=S.seen.slice(-8);$("dots").innerHTML="Last cards seen: "+l.map(t=>`<span class="${t}" title="${{n:"negative",z:"neutral",p:"positive"}[t]}"></span>`).join("")}
+// detector
+function negShare(){const l=S.seen.slice(-8);return l.length?l.filter(t=>t==="n").length/l.length:0}
+function tick(){const now=performance.now(),dt=(now-S.t)/1000;S.t=now;
+ if(S.dy>0)S.act=now;S.dy=0;
+ const active=now-S.act<3000&&!S.open&&S.tab==="feed";
+ if(active){const k=S.demo?30:1;S.sim+=dt*k;day().scroll+=dt*k/60}
+ const lim=S.thr*60,m=Math.floor(S.sim/60),sec=Math.floor(S.sim%60);
+ $("sc").textContent=m+":"+String(sec).padStart(2,"0");$("mti").style.width=Math.min(100,S.sim/lim*100)+"%";$("mt").classList.toggle("hot",S.sim>=lim*.8);
+ const n=negShare();$("m2").style.width=n*100+"%";$("v2").textContent=Math.round(n*100)+"%";
+ if(active&&S.sim>=lim&&S.sim>=S.cool)pause()}
+setInterval(tick,500);
+// gentle pause
+function show(h){$("sheetBody").innerHTML=h;$("sheet").classList.add("on");S.open=true}
+function hide(){$("sheet").classList.remove("on");S.open=false;S.act=0}
+function pause(){const m=Math.round(S.sim/60),neg=S.seen.slice(-8).filter(t=>t==="n").length;
+ day().nudges++;S.cool=S.sim+300;save();
+ show(`<h2>You've been scrolling for ${m} min</h2><p>${neg>=4?"Most of what you've seen is heavy news. ":""}Want a breather before the next swipe?</p>
+ <button class="btn p" id="yes">Take a calm swap</button><button class="btn" id="more">5 more minutes</button><button class="btn" id="no">Not now</button>`);
+ $("yes").onclick=swap;$("more").onclick=hide;$("no").onclick=()=>{S.sim=0;S.cool=0;S.seen=[];dots();hide()}}
+function swap(){let mode="b";
+ const draw=()=>{$("sheetBody").innerHTML=`<h2>Calm swap</h2><div class="opts"><button data-m="b">Breathe</button><button data-m="w">Walk</button><button data-m="m">Music</button></div><div id="sw"></div>`;
+  document.querySelectorAll(".opts button").forEach(b=>{b.setAttribute("aria-pressed",b.dataset.m===mode);b.onclick=()=>{mode=b.dataset.m;draw()}});
+  const w=$("sw");
+  if(mode==="b"){w.innerHTML=`<div class="orb" id="orb">Ready</div><p style="text-align:center">Three slow breaths, about 25 seconds.</p><button class="btn p" id="go">Start breathing</button>`;
+   $("go").onclick=()=>{$("go").disabled=true;const o=$("orb");o.classList.add("go");let i=0;const t=["Breathe in","Breathe out"];o.textContent=t[0];
+    const iv=setInterval(()=>{i++;if(i>=6){clearInterval(iv);done()}else o.textContent=t[i%2]},4000)}}
+  else if(mode==="w"){w.innerHTML=`<p>Put the phone down and walk for five minutes. Look at something far away.</p><button class="btn p" id="go">I'm going for a walk</button>`;$("go").onclick=done}
+  else{w.innerHTML=`<p>Calm acoustic, 20 minutes. Lower the screen brightness and listen.</p><button class="btn p" id="go">Start the playlist</button>`;$("go").onclick=done}};
+ draw()}
+function done(){const d=day();d.accepted++;d.reclaimed+=10;save();S.sim=0;S.cool=0;S.seen=[];dots();
+ show(`<h2>How do you feel now?</h2><p>You reclaimed about 10 minutes.</p><div class="moods"><button class="btn" data-v="1" aria-label="Worse">😟</button><button class="btn" data-v="2" aria-label="Same">😐</button><button class="btn" data-v="3" aria-label="Better">🙂</button></div>`);
+ document.querySelectorAll(".moods .btn").forEach(b=>b.onclick=()=>{d.moods.push(+b.dataset.v);save();hide();if(S.auto)toggleAuto();setTab("ins")})}
+// insights
+function insights(){const ks=Object.keys(D).sort().slice(-7),d=day();
+ const rate=d.nudges?Math.round(d.accepted/d.nudges*100)+"%":"n/a";
+ const all=ks.flatMap(k=>D[k].moods);const mood=all.length?(all.reduce((a,b)=>a+b,0)/all.length).toFixed(1)+" / 3":"n/a";
+ const max=Math.max(60,...ks.map(k=>Math.round(D[k].scroll))),H=110,bw=14;
+ const bars=ks.map((k,i)=>{const x=10+i*44,s=Math.round(D[k].scroll),r=D[k].reclaimed,lab=new Date(k+"T00:00").toLocaleDateString("en",{weekday:"short"});
+  return`<rect x="${x}" y="${H-s/max*H+8}" width="${bw}" height="${s/max*H}" rx="3" fill="var(--warn)"/><rect x="${x+bw+2}" y="${H-r/max*H+8}" width="${bw}" height="${r/max*H}" rx="3" fill="var(--sea)"/><text x="${x}" y="${H+24}">${lab}</text>`}).join("");
+ $("ins").innerHTML=`<h2 style="font-size:20px;margin:4px 0 10px">Time reclaimed</h2>
+ <div class="stats"><div class="stat"><b>${Math.round(d.scroll)} min</b><span>scrolled today</span></div><div class="stat"><b>${d.reclaimed} min</b><span>reclaimed today</span></div>
+ <div class="stat"><b>${rate}</b><span>nudge acceptance</span></div><div class="stat"><b>${mood}</b><span>mood after swaps</span></div></div>
+ <div class="card"><svg viewBox="0 0 320 140" width="100%" role="img" aria-label="Scroll minutes and reclaimed minutes per day">${bars}</svg>
+ <small><span style="color:var(--warn)">■</span> scrolled <span style="color:var(--sea)">■</span> reclaimed. Earlier days are sample data.</small></div>`}
+// tabs, controls
+function setTab(t){S.tab=t;feed.hidden=t!=="feed";$("ins").hidden=t!=="ins";$("tf").setAttribute("aria-selected",t==="feed");$("ti").setAttribute("aria-selected",t==="ins");if(t==="ins")insights()}
+$("tf").onclick=()=>setTab("feed");$("ti").onclick=()=>setTab("ins");
+$("demo").onchange=e=>S.demo=e.target.checked;
+$("mix").onchange=e=>S.mix=+e.target.value;
+$("sens").onchange=e=>{S.thr=+e.target.value;$("thr").textContent=S.thr};
+function toggleAuto(){S.auto=!S.auto;$("auto").setAttribute("aria-pressed",S.auto);$("auto").textContent=S.auto?"Stop auto-scroll":"Auto-scroll";if(S.auto){setTab("feed");S.pos=feed.scrollTop;S.lt=performance.now();requestAnimationFrame(step)}}
+function step(n){if(!S.auto)return;const dt=(n-S.lt)/1000;S.lt=n;if(!S.open){S.pos+=110*dt;feed.scrollTop=S.pos}else S.pos=feed.scrollTop;requestAnimationFrame(step)}
+$("auto").onclick=toggleAuto;
+$("reset").onclick=()=>{D=seed();save();S.sim=0;S.seen=[];S.cool=0;dots();if(S.tab==="ins")insights()};
+</script></body></html>
